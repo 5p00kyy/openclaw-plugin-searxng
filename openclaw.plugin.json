@@ -1,0 +1,24 @@
+{
+  "id": "searxng-search",
+  "name": "SearXNG Search",
+  "version": "1.0.0",
+  "description": "Web search via self-hosted SearXNG instance",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "description": "SearXNG instance URL (e.g. http://localhost:8080)"
+      },
+      "timeoutMs": {
+        "type": "number",
+        "description": "Request timeout in milliseconds (default: 15000)"
+      },
+      "defaultCount": {
+        "type": "number",
+        "description": "Default number of results (1-20, default: 5)"
+      }
+    }
+  }
+}

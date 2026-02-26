@@ -1,0 +1,27 @@
+{
+  "name": "openclaw-plugin-searxng",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "SearXNG web search plugin for OpenClaw - privacy-preserving search via your self-hosted SearXNG instance",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/5p00kyy/openclaw-plugin-searxng.git"
+  },
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "searxng",
+    "search",
+    "privacy",
+    "self-hosted"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.48"
+  }
+}
