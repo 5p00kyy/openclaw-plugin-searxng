@@ -1,9 +1,11 @@
 import { Type } from "@sinclair/typebox";
+import { tavily } from "@tavily/core";
 
 type PluginConfig = {
   baseUrl?: string;
   timeoutMs?: number;
   defaultCount?: number;
+  tavilyApiKey?: string;
 };
 
 export default function register(api: any) {
@@ -128,4 +130,103 @@ export default function register(api: any) {
       }
     },
   });
+
+  // --- Tavily search tool (additive) ---
+  const tavilyApiKey =
+    cfg.tavilyApiKey?.trim() || process.env.TAVILY_API_KEY || "";
+
+  if (!tavilyApiKey) {
+    console.warn(
+      "[openclaw-plugin-searxng] TAVILY_API_KEY not set — tavily_search tool will not be registered."
+    );
+  } else {
+    const tvly = tavily({ apiKey: tavilyApiKey });
+
+    api.registerTool({
+      name: "tavily_search",
+      description:
+        "Search the web via Tavily, a search API optimised for LLMs. " +
+        "Returns titles, URLs, snippets, and an optional AI-generated answer. " +
+        "Use for web searches when you need high-relevance, LLM-friendly results.",
+      parameters: Type.Object({
+        query: Type.String({ description: "Search query string." }),
+        max_results: Type.Optional(
+          Type.Number({
+            description: "Number of results (1-20, default 5).",
+            minimum: 1,
+            maximum: 20,
+          })
+        ),
+        search_depth: Type.Optional(
+          Type.Union(
+            [Type.Literal("basic"), Type.Literal("advanced")],
+            {
+              description:
+                "Search depth: basic (fast, 1 credit) or advanced (thorough, 2 credits). Default: basic.",
+            }
+          )
+        ),
+        include_answer: Type.Optional(
+          Type.Boolean({
+            description:
+              "Include a short AI-generated answer summarising the results. Default: false.",
+          })
+        ),
+      }),
+      async execute(_toolCallId: string, args: Record<string, unknown>) {
+        const query = args.query as string;
+        const maxResults =
+          (args.max_results as number | undefined) ?? defaultCount;
+        const searchDepth =
+          (args.search_depth as "basic" | "advanced" | undefined) ?? "basic";
+        const includeAnswer =
+          (args.include_answer as boolean | undefined) ?? false;
+
+        try {
+          const response = await tvly.search(query, {
+            maxResults,
+            searchDepth,
+            includeAnswer,
+          });
+
+          const results = (response.results ?? []).map((r) => ({
+            title: r.title ?? "",
+            url: r.url ?? "",
+            description: r.content ?? "",
+            score: r.score ?? undefined,
+          }));
+
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  query,
+                  provider: "tavily",
+                  count: results.length,
+                  ...(includeAnswer && response.answer
+                    ? { answer: response.answer }
+                    : {}),
+                  results,
+                }),
+              },
+            ],
+          };
+        } catch (err: unknown) {
+          const message =
+            err instanceof Error ? err.message : "Unknown error";
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify({
+                  error: `Tavily request failed: ${message}`,
+                }),
+              },
+            ],
+          };
+        }
+      },
+    });
+  }
 }
