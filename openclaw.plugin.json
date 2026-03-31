@@ -18,6 +18,10 @@
       "defaultCount": {
         "type": "number",
         "description": "Default number of results (1-20, default: 5)"
+      },
+      "tavilyApiKey": {
+        "type": "string",
+        "description": "Tavily API key (alternatively set TAVILY_API_KEY env var)"
       }
     }
   }
